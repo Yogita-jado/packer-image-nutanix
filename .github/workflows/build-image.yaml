@@ -1,0 +1,53 @@
+name: Build QEMU (nutanix-compatible) image
+run-name: Build and push image
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to build'
+        required: true
+        type: choice
+        options:
+          - elasticsearch
+          - haproxy
+          - jenkins
+          - mongo
+          - rke
+          - services
+          - base
+      debug:
+        description: 'Debug mode'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Maximize build space
+        uses: AdityaGarg8/remove-unwanted-software@v3
+        with:
+          remove-android: 'true'
+
+      - name: Checkout branch
+        uses: actions/checkout@v4
+
+      - name: Install qemu
+        run: |
+          sudo apt-get update && sudo apt-get install -y qemu-system \
+            qemu-utils \
+            qemu-kvm \
+            libvirt-clients \
+            libvirt-daemon-system \
+            bridge-utils \
+            virtinst \
+            libvirt-daemon \
+            virt-manager && \
+          sudo usermod -aG libvirt $(whoami) && \
+          sudo usermod -aG kvm $(whoami) && \
+          sudo chmod +666 /dev/kvm
+
+      - name: Setup `packer`
+        uses: hashicorp/setup-packer@main
